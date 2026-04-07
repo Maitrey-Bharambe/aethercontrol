@@ -32,27 +32,25 @@ const vertexShader = `
     vec4 videoColor = texture2D(uVideoTexture, uv);
     vec4 maskColor = texture2D(uSegmentationTexture, uv);
     
-    // Bio-Segmentation: white is user (mask value > 0.1)
+    // Bio-Segmentation: check for red-channel mask
     vIsUser = maskColor.r > 0.05 ? 1.0 : 0.0;
-
-    // Luminance for displacement and thermal mapping
+    
     float luminance = dot(videoColor.rgb, vec3(0.299, 0.587, 0.114));
     vLuminance = luminance;
 
     vec3 pos = position;
-    // Map luminance to Z displacement - deeper for 256 resolution
-    pos.z += (luminance * 3.5);
+    // Displace z significantly to create 3D volume
+    pos.z += (luminance * 2.5);
 
-    // Scanner Check (Local X/Y bounds)
-    float isInside = (pos.x >= uScannerMin.x && pos.x <= uScannerMax.x &&
-                      pos.y >= uScannerMin.y && pos.y <= uScannerMax.y) ? 1.0 : 0.0;
-    vInside = isInside;
+    // Scanner Check (World Space bounds)
+    vInside = (pos.x >= uScannerMin.x && pos.x <= uScannerMax.x &&
+               pos.y >= uScannerMin.y && pos.y <= uScannerMax.y) ? 1.0 : 0.0;
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     
-    // Responsive sizing
-    float sizeModifier = mix(1.2, 4.0, vInside);
-    gl_PointSize = vIsUser * sizeModifier * (25.0 / -mvPosition.z);
+    // Points are bigger and brighter inside the scanner
+    float sizeFactor = vInside > 0.5 ? 4.5 : 1.2;
+    gl_PointSize = vIsUser * sizeFactor * (45.0 / -mvPosition.z);
     gl_Position = projectionMatrix * mvPosition;
     
     vPosition = pos;
@@ -67,46 +65,47 @@ const fragmentShader = `
   varying float vLuminance;
   varying float vIsUser;
 
-  // Multi-chromatic Bio-Thermal Palette
   vec3 thermalPalette(float t) {
-    vec3 c1 = vec3(0.0, 0.0, 0.2); // Deep Blue (Cold)
-    vec3 c2 = vec3(0.0, 1.0, 1.0); // Cyan
-    vec3 c3 = vec3(0.0, 1.0, 0.0); // Green
-    vec3 c4 = vec3(1.0, 1.0, 0.0); // Yellow
-    vec3 c5 = vec3(1.0, 0.1, 0.0); // Red-Orange
-    vec3 c6 = vec3(1.0, 1.0, 1.0); // White (Hot)
+    vec3 cold = vec3(0.0, 0.05, 0.2);
+    vec3 cool = vec3(0.0, 0.5, 1.0);
+    vec3 mid  = vec3(0.0, 1.0, 0.5);
+    vec3 warm = vec3(1.0, 0.8, 0.0);
+    vec3 hot  = vec3(1.0, 0.2, 0.0);
+    vec3 core = vec3(1.0, 1.0, 1.0);
     
-    if (t < 0.2) return mix(c1, c2, t * 5.0);
-    if (t < 0.4) return mix(c2, c3, (t - 0.2) * 5.0);
-    if (t < 0.6) return mix(c3, c4, (t - 0.4) * 5.0);
-    if (t < 0.8) return mix(c4, c5, (t - 0.6) * 5.0);
-    return mix(c5, c6, (t - 0.8) * 5.0);
+    if (t < 0.2) return mix(cold, cool, t * 5.0);
+    if (t < 0.4) return mix(cool, mid, (t - 0.2) * 5.0);
+    if (t < 0.6) return mix(mid, warm, (t - 0.4) * 5.0);
+    if (t < 0.8) return mix(warm, hot, (t - 0.6) * 5.0);
+    return mix(hot, core, (t - 0.8) * 5.0);
   }
 
   void main() {
     if (vIsUser < 0.5) discard;
 
-    float strength = 1.0 - distance(gl_PointCoord, vec2(0.5)) * 2.0;
-    if (strength < 0.01) discard;
+    float dist = distance(gl_PointCoord, vec2(0.5));
+    if (dist > 0.5) discard;
+    float strength = 1.0 - dist * 2.0;
 
-    // Normal Ghost Vision (Outside)
-    vec3 outsideColor = vec3(0.3, 0.6, 1.0) * (0.1 + 0.9 * vLuminance);
+    // Default "Body Ghost" color
+    vec3 ghostColor = vec3(0.2, 0.5, 1.0) * (0.2 + 0.8 * vLuminance);
     
-    // Detailed Thermal Mapping (Inside)
+    // Thermal reconstruction
     vec3 thermal = thermalPalette(vLuminance);
     
-    // Topographical Sonar Rips
-    float ripple = sin(vPosition.z * 15.0 - uTime * 4.0) * 0.1 + 0.9;
-    thermal *= ripple;
+    // Topographic depth-lines (Medical Sonar look)
+    float topo = sin(vPosition.z * 20.0 - uTime * 2.0) * 0.5 + 0.5;
+    thermal *= (0.7 + 0.3 * topo);
 
-    // Scanning Line Highlight
-    float scanline = smoothstep(0.48, 0.52, fract(vPosition.y * 0.2 - uTime * 0.3)) * 0.2;
-    thermal += scanline * vec3(0.0, 1.0, 1.0);
+    // Dynamic horizontal scanning bar
+    float scanLineY = fract(uTime * 0.4) * 8.0 - 4.0; 
+    float scanPulse = smoothstep(0.1, 0.0, abs(vPosition.y - scanLineY));
+    thermal += scanPulse * vec3(0.0, 1.0, 1.0) * 2.0;
 
-    vec3 finalColor = mix(outsideColor, thermal, vInside);
-    float finalAlpha = mix(0.1, 1.0, vInside);
+    vec3 finalColor = mix(ghostColor, thermal, vInside);
+    float alpha = mix(0.15, 0.9, vInside) * strength;
 
-    gl_FragColor = vec4(finalColor, finalAlpha * strength);
+    gl_FragColor = vec4(finalColor, alpha);
   }
 `;
 
@@ -120,38 +119,42 @@ export default function XRayPoints({ videoTexture, segmentationTexture, scannerR
     const pos = new Float32Array(NUM_POINTS * 3);
     const uv = new Float32Array(NUM_POINTS * 2);
 
-    // Calculate aspect ratio calibration
-    // Video is 640x480 (4:3). Viewport varies.
-    const videoAspect = 4 / 3;
-    const viewportAspect = viewport.width / viewport.height;
-    
-    let scaleX = 1;
-    let scaleY = 1;
-    let offsetX = 0;
-    let offsetY = 0;
+    const aspect = viewport.width / viewport.height;
+    const scaleY = 4.142; 
+    const scaleX = scaleY * aspect;
 
-    if (viewportAspect > videoAspect) {
-        // Viewport is wider than video (letterbox vertical)
-        scaleX = 1;
-        scaleY = viewportAspect / videoAspect;
+    // Video is 4:3 (1.333)
+    const videoAspect = 4 / 3;
+    const screenAspect = aspect;
+
+    let uScale = 1;
+    let vScale = 1;
+    let uOffset = 0;
+    let vOffset = 0;
+
+    if (screenAspect > videoAspect) {
+        // Wider screen: crop top/bottom
+        vScale = videoAspect / screenAspect;
+        vOffset = (1 - vScale) / 2;
     } else {
-        // Viewport is taller than video (letterbox horizontal)
-        scaleX = videoAspect / viewportAspect;
-        scaleY = 1;
+        // Taller screen: crop sides
+        uScale = screenAspect / videoAspect;
+        uOffset = (1 - uScale) / 2;
     }
 
     for (let i = 0; i < NUM_POINTS; i++) {
-        const x = (i % GRID_SIZE) / GRID_SIZE;
-        const y = Math.floor(i / GRID_SIZE) / GRID_SIZE;
+        const xIdx = (i % GRID_SIZE) / (GRID_SIZE - 1);
+        const yIdx = Math.floor(i / GRID_SIZE) / (GRID_SIZE - 1);
 
-        // Corrected mapping to handle object-fit:cover logic
-        // This ensures the point cloud perfectly aligns with the scaled video pixels
-        pos[i * 3 + 0] = (0.5 - x) * viewport.width * scaleX; 
-        pos[i * 3 + 1] = (y - 0.5) * viewport.height * scaleY;
+        // Position: Map to full viewport world space
+        // Standard mapping: index 0 (Left) -> pos -1 (Left), index 1 (Right) -> pos 1 (Right)
+        pos[i * 3 + 0] = (xIdx - 0.5) * 2.0 * scaleX; 
+        pos[i * 3 + 1] = (yIdx - 0.5) * 2.0 * scaleY;
         pos[i * 3 + 2] = 0;
 
-        uv[i * 2 + 0] = x;
-        uv[i * 2 + 1] = y;
+        // UV: Filter through mirroring to match scaleX(-1) display
+        uv[i * 2 + 0] = uOffset + (1.0 - xIdx) * uScale;
+        uv[i * 2 + 1] = vOffset + yIdx * vScale;
     }
     return [pos, uv];
   }, [viewport.width, viewport.height]);

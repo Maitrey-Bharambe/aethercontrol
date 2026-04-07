@@ -64,6 +64,7 @@ export default function XRayPage() {
         videoTexture={videoTexture} 
         segmentationTexture={segmentationTexture}
         scannerRef={scannerRef} 
+        landmarks={landmarks}
       />
 
       {/* HUD UI */}

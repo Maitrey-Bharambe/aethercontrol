@@ -83,7 +83,7 @@ export default function XRayFrame({ scannerRef }: XRayFrameProps) {
   return (
     <group ref={groupRef}>
       {/* 1. Black Backing (The Dark Chamber) */}
-      <mesh ref={backingRef} position={[0, 0, -0.05]}> 
+      <mesh ref={backingRef} position={[0, 0, -5.0]}> 
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial color="#000" transparent={false} opacity={1} />
       </mesh>

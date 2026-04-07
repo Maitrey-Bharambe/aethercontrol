@@ -8,7 +8,7 @@ export type GestureType =
   | 'FREEZE';
 
 
-export type AppMode = 'cosmic' | 'electric' | 'fluid';
+export type AppMode = 'cosmic' | 'electric' | 'fluid' | 'hologram';
 
 export interface Vec3 {
   x: number;
@@ -23,6 +23,7 @@ export interface HandState {
   gesture: GestureType;
   handedness: 'Left' | 'Right';
   speed: number;
+  rotation: number; // Angle in radians
 }
 
 
@@ -39,6 +40,7 @@ interface GestureStore {
   handPosition: Vec3;
   handVelocity: Vec3;
   handSpeed: number;
+  handRotation: number;
   gesture: GestureType;
 
   // Mode
@@ -52,6 +54,12 @@ interface GestureStore {
   // Pinch grab
   grabbedObjectId: number | null;
   setGrabbedObjectId: (id: number | null) => void;
+
+  // Aether-Core / Hologram State
+  explodeFactor: number;
+  setExplodeFactor: (f: number) => void;
+  hoveredPartId: string | null;
+  setHoveredPartId: (id: string | null) => void;
 }
 
 export const useGestureStore = create<GestureStore>((set) => ({
@@ -67,6 +75,7 @@ export const useGestureStore = create<GestureStore>((set) => ({
         handPosition: primary.position,
         handVelocity: primary.velocity,
         handSpeed: primary.speed,
+        handRotation: primary.rotation,
         gesture: primary.gesture,
       });
     } else {
@@ -82,6 +91,7 @@ export const useGestureStore = create<GestureStore>((set) => ({
   handPosition: { x: 0, y: 0, z: 0 },
   handVelocity: { x: 0, y: 0, z: 0 },
   handSpeed: 0,
+  handRotation: 0,
   gesture: 'IDLE',
 
   activeMode: 'cosmic',
@@ -92,5 +102,11 @@ export const useGestureStore = create<GestureStore>((set) => ({
 
   grabbedObjectId: null,
   setGrabbedObjectId: (id) => set({ grabbedObjectId: id }),
+
+  // Hologram defaults
+  explodeFactor: 0,
+  setExplodeFactor: (f) => set({ explodeFactor: f }),
+  hoveredPartId: null,
+  setHoveredPartId: (id) => set({ hoveredPartId: id }),
 }));
 

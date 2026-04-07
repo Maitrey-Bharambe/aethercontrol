@@ -53,6 +53,12 @@ export default function HandTracker() {
 
         const velocity = { x: vx, y: vy, z: vz };
         const speed    = Math.sqrt(vx * vx + vy * vy);
+
+        // Calculate hand rotation (angle between wrist 0 and MCP 9)
+        const wrist = landmarks[0];
+        const mcp = landmarks[9];
+        const rotation = Math.atan2(mcp.y - wrist.y, mcp.x - wrist.x) + Math.PI / 2;
+
         const gesture  = detectGesture(landmarks, velocity, gestureRef.current);
         gestureRef.current = gesture;
 
@@ -63,6 +69,7 @@ export default function HandTracker() {
           gesture,
           handedness,
           speed,
+          rotation,
         };
       });
 

@@ -57,12 +57,13 @@ const XRayTracker = forwardRef<XRayTrackerHandle, {}>((_, ref) => {
     let leftLms: Landmark[] | null = null;
     let rightLms: Landmark[] | null = null;
 
-    results.multiHandLandmarks.forEach((lms: Landmark[], idx: number) => {
+    for (let idx = 0; idx < results.multiHandLandmarks.length; idx++) {
+      const lms = results.multiHandLandmarks[idx];
       const handedness = results.multiHandedness?.[idx];
       const label = handedness?.label;
       if (label === 'Left') leftLms = lms;
       if (label === 'Right') rightLms = lms;
-    });
+    }
 
     landmarksRef.current = { left: leftLms, right: rightLms };
 
@@ -73,14 +74,17 @@ const XRayTracker = forwardRef<XRayTrackerHandle, {}>((_, ref) => {
       const rIndex = rightLms[8]!;
       const rThumb = rightLms[4]!;
 
-      const lMid = { x: (lIndex.x + lThumb.x) / 2, y: (lIndex.y + lThumb.y) / 2 };
-      const rMid = { x: (rIndex.x + rThumb.x) / 2, y: (rIndex.y + rThumb.y) / 2 };
+      const lMid = { x: (lIndex.x + lThumb.x) / 2, y: (lIndex.y + lThumb.y) / 2, z: 0 };
+      const rMid = { x: (rIndex.x + rThumb.x) / 2, y: (rIndex.y + rThumb.y) / 2, z: 0 };
 
-      const p1 = landmarkToWorld(lMid, scaleX, scaleY, 2.0);
-      const p2 = landmarkToWorld(rMid, scaleX, scaleY, 2.0);
+      // Ensure scale matches XRayPoints exactly
+      const p1 = landmarkToWorld(lMid, scaleX, scaleY, 0); 
+      const p2 = landmarkToWorld(rMid, scaleX, scaleY, 0);
 
-      scannerRef.current.min.set(Math.min(p1.x, p2.x), Math.min(p1.y, p2.y), 0);
-      scannerRef.current.max.set(Math.max(p1.x, p2.x), Math.max(p1.y, p2.y), 0);
+      // Expand bounds slightly for better visual coverage
+      const margin = 0.2;
+      scannerRef.current.min.set(Math.min(p1.x, p2.x) - margin, Math.min(p1.y, p2.y) - margin, 0);
+      scannerRef.current.max.set(Math.max(p1.x, p2.x) + margin, Math.max(p1.y, p2.y) + margin, 0);
     }
   };
 

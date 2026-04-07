@@ -4,15 +4,17 @@ import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import XRayPoints from './XRayPoints';
 import XRayFrame from './XRayFrame';
+import XRaySkeleton from './XRaySkeleton';
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing';
 
 interface XRayCanvasProps {
   videoTexture: THREE.VideoTexture | null;
   segmentationTexture: THREE.CanvasTexture | null;
   scannerRef: React.RefObject<{ min: THREE.Vector3; max: THREE.Vector3 }>;
+  landmarks: { left: any[] | null; right: any[] | null };
 }
 
-export default function XRayCanvas({ videoTexture, segmentationTexture, scannerRef }: XRayCanvasProps) {
+export default function XRayCanvas({ videoTexture, segmentationTexture, scannerRef, landmarks }: XRayCanvasProps) {
   return (
     <div 
       className="fixed inset-0 z-10 pointer-events-none overflow-hidden"
@@ -30,6 +32,7 @@ export default function XRayCanvas({ videoTexture, segmentationTexture, scannerR
             segmentationTexture={segmentationTexture}
             scannerRef={scannerRef} 
         />
+        <XRaySkeleton landmarks={landmarks} />
         <XRayFrame scannerRef={scannerRef} />
         
         <EffectComposer multisampling={0}>

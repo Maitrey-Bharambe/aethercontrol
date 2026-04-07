@@ -7,10 +7,10 @@ import UIOverlay from '@/components/UIOverlay';
 const HologramCanvas = dynamic(() => import('@/components/Hologram/HologramCanvas'), { ssr: false });
 const HandTracker = dynamic(() => import('@/components/HandTracker'), { ssr: false });
 
-export default function Home() {
+export default function HologramPage() {
   return (
     <main className="root-container">
-      {/* 3D Hologram Scene (Aether-Core) */}
+      {/* 3D Hologram Scene */}
       <div className="canvas-container">
         <HologramCanvas />
       </div>

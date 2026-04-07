@@ -94,12 +94,35 @@ export default function XRayHUD({ landmarks }: XRayHUDProps) {
            <div className="h-1 bg-white/5 rounded-full overflow-hidden mt-2">
               <div 
                 className="h-full bg-cyan-500 transition-all duration-500"
-                style={{ width: landmarks.left && landmarks.right ? '100%' : landmarks.left || landmarks.right ? '50%' : '0%' }}
+                style={{ width: landmarks.left && landmarks.right ? '100%' : (landmarks.left || landmarks.right ? '50%' : '0%') }}
               />
            </div>
         </div>
 
       </div>
+
+      {/* Floating Biometric Labels (Near Cursor/Scanner) */}
+      {(landmarks.left && landmarks.right) && (
+        <div 
+          className="absolute pointer-events-none transition-all duration-75"
+          style={{ 
+            left: `${(1 - (landmarks.left[8].x + landmarks.right[8].x) / 2) * 100}%`, 
+            top: `${((landmarks.left[8].y + landmarks.right[8].y) / 2) * 100}%`,
+            transform: 'translate(40px, -40px)'
+          }}
+        >
+          <div className="flex flex-col gap-1">
+            <div className="bg-black/80 border-l-2 border-cyan-500 px-2 py-1 flex items-center gap-2">
+              <span className="text-[10px] text-white/50 uppercase font-black">NEURAL SYNC</span>
+              <span className="text-[10px] text-cyan-400 font-bold">98.4%</span>
+            </div>
+            <div className="bg-black/80 border-l-2 border-pink-500 px-2 py-1 flex items-center gap-2">
+              <span className="text-[10px] text-white/50 uppercase font-black">CORE TEMP</span>
+              <span className="text-[10px] text-pink-500 font-bold">310.2 K</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .animate-dash { animation: dash 5s linear infinite; }
