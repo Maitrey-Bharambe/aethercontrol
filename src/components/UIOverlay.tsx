@@ -21,7 +21,7 @@ export default function UIOverlay() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', pointerEvents: 'none', zIndex: 20 }}>
         <div style={{ animation: 'fadeIn 1s ease' }}>
           <h1 className="title">AetherControl</h1>
-          <p  className="subtitle">PROXIMITY PARTICLE ENGINE — v2.0</p>
+          <p  className="subtitle">AETHERCONTROL — GESTURE ENGINE v2.0</p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
@@ -37,9 +37,9 @@ export default function UIOverlay() {
             </button>
           </Link>
 
-          <Link href="/particle" style={{ pointerEvents: 'all' }}>
+          <Link href="/puzzle" style={{ pointerEvents: 'all' }}>
             <button className="btn" style={{ background: 'rgba(0, 150, 255, 0.1)', borderColor: 'rgba(0, 150, 255, 0.4)', color: '#0096ff' }}>
-              🌌 Particle Engine
+              🧩 Interactive Puzzle
             </button>
           </Link>
 

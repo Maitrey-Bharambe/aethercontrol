@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* ═══════════════════════════════════════════════════════════
    AetherControl — Professional Design System
    ═══════════════════════════════════════════════════════════ */
@@ -11,7 +13,7 @@
   --col-border    : rgba(255,255,255,0.1);
   --col-surface   : rgba(255,255,255,0.05);
 
-  --font-main     : 'Inter', sans-serif;
+  --font-main     : 'Outfit', 'Inter', sans-serif;
   --font-mono     : 'JetBrains Mono', monospace;
 }
 
@@ -23,12 +25,51 @@ html, body {
   background: var(--col-bg);
   color: var(--col-text);
   font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
 }
 
 .root-container {
   position: relative;
   width: 100vw;
   height: 100vh;
+}
+
+/* ── Custom Utilities ── */
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Custom Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation-duration: 0.8s;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-in { animation-name: fadeIn; }
+.zoom-in { animation-name: zoomIn; }
+.slide-in-from-bottom-8, .slide-in-from-bottom-10 { animation-name: slideInUp; }
+
+.bg-radial-gradient {
+  background: radial-gradient(circle at center, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%);
 }
 
 /* ── UI Layer ── */
