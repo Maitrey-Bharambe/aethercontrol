@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
 import * as THREE from 'three';
 import { startTracking, stopTracking, LandmarkResult } from '@/lib/handTracking';
 import { landmarkToWorld } from '@/lib/gestureUtils';
@@ -14,10 +14,13 @@ export interface XRayTrackerHandle {
   landmarks: { left: Landmark[] | null; right: Landmark[] | null };
 }
 
-const XRayTracker = forwardRef<XRayTrackerHandle, {}>((_, ref) => {
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface XRayTrackerProps {}
+
+const XRayTracker = forwardRef<XRayTrackerHandle, XRayTrackerProps>((_, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoTexture, setVideoTexture] = useState<THREE.VideoTexture | null>(null);
-  const [segmentationTexture, setSegmentationTexture] = useState<THREE.CanvasTexture | null>(null);
+  const videoTextureRef = useRef<THREE.VideoTexture | null>(null);
+  const segmentationTextureRef = useRef<THREE.CanvasTexture | null>(null);
   
   const scannerRef = useRef<{ min: THREE.Vector3; max: THREE.Vector3 }>({
     min: new THREE.Vector3(-1, -1, 0),
@@ -26,21 +29,20 @@ const XRayTracker = forwardRef<XRayTrackerHandle, {}>((_, ref) => {
   const landmarksRef = useRef<{ left: Landmark[] | null; right: Landmark[] | null }>({ left: null, right: null });
 
   useImperativeHandle(ref, () => ({
-    videoTexture,
-    segmentationTexture,
+    videoTexture: videoTextureRef.current,
+    segmentationTexture: segmentationTextureRef.current,
     scanner: scannerRef.current,
     landmarks: landmarksRef.current,
   }));
 
-  const handleResults = (results: LandmarkResult) => {
+  const handleResults = useCallback((results: LandmarkResult) => {
     // 1. Update Segmentation Texture
     if (results.segmentationMask && videoRef.current) {
-        if (!segmentationTexture) {
-            const tex = new THREE.CanvasTexture(results.segmentationMask as any);
-            setSegmentationTexture(tex);
+        if (!segmentationTextureRef.current) {
+            segmentationTextureRef.current = new THREE.CanvasTexture(results.segmentationMask as HTMLCanvasElement);
         } else {
-            (segmentationTexture as any).image = results.segmentationMask;
-            segmentationTexture.needsUpdate = true;
+            segmentationTextureRef.current.image = results.segmentationMask as HTMLCanvasElement;
+            segmentationTextureRef.current.needsUpdate = true;
         }
     }
 
@@ -67,7 +69,6 @@ const XRayTracker = forwardRef<XRayTrackerHandle, {}>((_, ref) => {
 
     landmarksRef.current = { left: leftLms, right: rightLms };
 
-    // Explicit Non-Null Assertion for strict array access
     if (leftLms && rightLms && leftLms.length > 8 && rightLms.length > 8) {
       const lIndex = leftLms[8]!;
       const lThumb = leftLms[4]!;
@@ -77,27 +78,24 @@ const XRayTracker = forwardRef<XRayTrackerHandle, {}>((_, ref) => {
       const lMid = { x: (lIndex.x + lThumb.x) / 2, y: (lIndex.y + lThumb.y) / 2, z: 0 };
       const rMid = { x: (rIndex.x + rThumb.x) / 2, y: (rIndex.y + rThumb.y) / 2, z: 0 };
 
-      // Ensure scale matches XRayPoints exactly
       const p1 = landmarkToWorld(lMid, scaleX, scaleY, 0); 
       const p2 = landmarkToWorld(rMid, scaleX, scaleY, 0);
 
-      // Expand bounds slightly for better visual coverage
       const margin = 0.2;
       scannerRef.current.min.set(Math.min(p1.x, p2.x) - margin, Math.min(p1.y, p2.y) - margin, 0);
       scannerRef.current.max.set(Math.max(p1.x, p2.x) + margin, Math.max(p1.y, p2.y) + margin, 0);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (videoRef.current) {
       startTracking(videoRef.current, handleResults);
-      const texture = new THREE.VideoTexture(videoRef.current);
-      setVideoTexture(texture);
+      videoTextureRef.current = new THREE.VideoTexture(videoRef.current);
     }
     return () => {
       stopTracking();
     };
-  }, []);
+  }, [handleResults]);
 
   return (
     <div 

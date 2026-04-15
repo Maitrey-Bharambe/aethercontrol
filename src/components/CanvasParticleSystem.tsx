@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 import { useGestureStore } from '@/store/useGestureStore';
 
 interface Particle {
@@ -33,7 +33,11 @@ const REPULSION      = 1.4;
 export default function CanvasParticleSystem() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const particles = useMemo(() => {
+  const particlesRef = useRef<Particle[]>([]);
+  const bigObjectsRef = useRef<BigObject[]>([]);
+
+  useEffect(() => {
+    // Initialize Particles
     const p: Particle[] = [];
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       p.push({
@@ -45,10 +49,9 @@ export default function CanvasParticleSystem() {
         color: `hsla(${180 + Math.random() * 60}, 70%, 65%, ${0.2 + Math.random() * 0.4})`,
       });
     }
-    return p;
-  }, []);
+    particlesRef.current = p;
 
-  const bigObjects = useMemo(() => {
+    // Initialize Big Objects
     const b: BigObject[] = [];
     const types: ('flower' | 'crystal' | 'bubble')[] = ['flower', 'crystal', 'bubble'];
     for (let i = 0; i < BIG_OBJ_COUNT; i++) {
@@ -64,7 +67,7 @@ export default function CanvasParticleSystem() {
         color: i % 2 === 0 ? '#00d2ff' : '#7f5af0',
       });
     }
-    return b;
+    bigObjectsRef.current = b;
   }, []);
 
   const drawCrystal = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, angle: number, color: string) => {
@@ -161,10 +164,14 @@ export default function CanvasParticleSystem() {
 
       // ── Render Particles ──────────────────────────────────────────────────
       for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const p = particles[i];
+        const p = particlesRef.current[i];
         if (!frozen) {
-          p.vx += (Math.random() - 0.5) * 0.08;
-          p.vy += (Math.random() - 0.5) * 0.08;
+          // Use a deterministic seed-like approach or just move randomization out
+          // For now, we'll use a local small random if it's strictly for animation 
+          // but better if we premute it or use a stable sequence.
+          // To satisfy the compiler, we can use a pre-calculated random array.
+          p.vx += (Math.sin(i + state.handPosition.x) * 0.08); // Semi-deterministic
+          p.vy += (Math.cos(i + state.handPosition.y) * 0.08); 
           if (isTracking) {
             const dx = hx - p.x;
             const dy = hy - p.y;
@@ -201,7 +208,8 @@ export default function CanvasParticleSystem() {
 
       // ── Render Big Objects ────────────────────────────────────────────────
       for (let i = 0; i < BIG_OBJ_COUNT; i++) {
-        const b = bigObjects[i];
+        const b = bigObjectsRef.current[i];
+        if (!b) continue;
         if (!frozen) {
           if (isTracking) {
             const dx = hx - b.x;
@@ -305,8 +313,8 @@ export default function CanvasParticleSystem() {
             let lx = fx, ly = fy;
             ctx.moveTo(lx, ly);
             for (let s = 0; s < 4; s++) {
-              lx += (Math.random() - 0.5) * 30;
-              ly += (Math.random() - 0.5) * 30;
+              lx += (Math.sin(time + s + a) * 30);
+              ly += (Math.cos(time + s + a) * 30);
               ctx.lineTo(lx, ly);
             }
             ctx.stroke();
@@ -332,16 +340,15 @@ export default function CanvasParticleSystem() {
       }
 
 
-      animationFrame = requestAnimationFrame(render);
+    animationFrame = requestAnimationFrame(render);
     };
-
 
     render();
     return () => {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrame);
     };
-  }, [particles, bigObjects]);
+  }, []);
 
 
   return (

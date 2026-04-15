@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useRef, useEffect } from 'react';
+import React, { Suspense, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, Stars, Float, ContactShadows } from '@react-three/drei';
 import EngineModel from './EngineModel';

@@ -7,11 +7,17 @@ import XRayFrame from './XRayFrame';
 import XRaySkeleton from './XRaySkeleton';
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing';
 
+interface Landmark {
+  x: number;
+  y: number;
+  z: number;
+}
+
 interface XRayCanvasProps {
   videoTexture: THREE.VideoTexture | null;
   segmentationTexture: THREE.CanvasTexture | null;
   scannerRef: React.RefObject<{ min: THREE.Vector3; max: THREE.Vector3 }>;
-  landmarks: { left: any[] | null; right: any[] | null };
+  landmarks: { left: Landmark[] | null; right: Landmark[] | null };
 }
 
 export default function XRayCanvas({ videoTexture, segmentationTexture, scannerRef, landmarks }: XRayCanvasProps) {

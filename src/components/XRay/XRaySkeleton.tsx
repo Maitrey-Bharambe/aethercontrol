@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { landmarkToWorld } from '@/lib/gestureUtils';
@@ -30,11 +30,22 @@ const BONES = [
 export default function XRaySkeleton({ landmarks }: XRaySkeletonProps) {
   const lineRefLeft = useRef<THREE.LineSegments>(null);
   const lineRefRight = useRef<THREE.LineSegments>(null);
+  const pointsRefLeft = useRef<THREE.Points>(null);
+  const pointsRefRight = useRef<THREE.Points>(null);
   const { viewport } = useThree();
 
   const aspect = viewport.width / viewport.height;
   const scaleY = 4.142; // Match existing calibration
   const scaleX = scaleY * aspect;
+
+  const landmarksRef = useRef<{ left: Landmark[] | null; right: Landmark[] | null }>({ left: null, right: null });
+  useEffect(() => {
+    // Structural clone to satisfy strict immutability checks
+    landmarksRef.current = { 
+        left: landmarks.left ? [...landmarks.left] : null, 
+        right: landmarks.right ? [...landmarks.right] : null 
+    };
+  }, [landmarks]);
 
   const [vertices, indices] = useMemo(() => {
     // 21 points per hand, 3 coords each
@@ -82,12 +93,15 @@ export default function XRaySkeleton({ landmarks }: XRaySkeletonProps) {
       }
     };
 
-    updateHand(landmarks.left, lineRefLeft.current, pointsRefLeft.current);
-    updateHand(landmarks.right, lineRefRight.current, pointsRefRight.current);
+    const currentLms = landmarksRef.current;
+    if (!currentLms) return;
+    
+    const left = currentLms.left;
+    const right = currentLms.right;
+    updateHand(left, lineRefLeft.current, pointsRefLeft.current);
+    updateHand(right, lineRefRight.current, pointsRefRight.current);
   });
 
-  const pointsRefLeft = useRef<THREE.Points>(null);
-  const pointsRefRight = useRef<THREE.Points>(null);
 
   return (
     <group>

@@ -8,14 +8,14 @@
 export type LandmarkResult = {
   multiHandLandmarks: Array<Array<{ x: number; y: number; z: number }>>;
   multiHandedness: Array<{ label: string; score: number }>;
-  segmentationMask?: HTMLCanvasElement | ImageBitmap | null;
-  image: any;
+  segmentationMask?: HTMLCanvasElement | ImageBitmap | HTMLImageElement | null;
+  image: HTMLCanvasElement | ImageBitmap | HTMLVideoElement | HTMLImageElement;
 };
 
 // Singleton instances
-let handsInstance: any = null;
-let selfieInstance: any = null;
-let cameraInstance: any = null;
+let handsInstance: InstanceType<typeof import('@mediapipe/hands').Hands> | null = null;
+let selfieInstance: InstanceType<typeof import('@mediapipe/selfie_segmentation').SelfieSegmentation> | null = null;
+let cameraInstance: InstanceType<typeof import('@mediapipe/camera_utils').Camera> | null = null;
 let isShuttingDown = false;
 
 // Version constants (Unpkg format)
@@ -54,13 +54,13 @@ export async function startTracking(
     modelSelection: 1, 
   });
 
-  let latestHands: any = null;
+  let latestHands: import('@mediapipe/hands').Results | null = null;
 
-  hands.onResults((results: any) => {
+  hands.onResults((results) => {
     latestHands = results;
   });
 
-  selfie.onResults((results: any) => {
+  selfie.onResults((results) => {
     onResults({
       multiHandLandmarks: latestHands?.multiHandLandmarks || [],
       multiHandedness: latestHands?.multiHandedness || [],
@@ -99,11 +99,11 @@ export async function stopTracking(): Promise<void> {
     cameraInstance = null;
   }
   if (handsInstance) {
-    try { handsInstance.close(); } catch(e) {}
+    try { handsInstance.close(); } catch { /* ignore */ }
     handsInstance = null;
   }
   if (selfieInstance) {
-    try { selfieInstance.close(); } catch(e) {}
+    try { selfieInstance.close(); } catch { /* ignore */ }
     selfieInstance = null;
   }
   isShuttingDown = false;

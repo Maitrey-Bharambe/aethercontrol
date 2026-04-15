@@ -13,7 +13,6 @@ interface Props {
 }
 
 export default function PuzzlePiece({ 
-  id, 
   originalIndex, 
   currentIndex, 
   gridSize, 

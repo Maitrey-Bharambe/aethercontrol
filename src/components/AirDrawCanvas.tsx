@@ -46,41 +46,6 @@ export default function AirDrawCanvas() {
   const [gesture, setGesture]       = useState('');
   const [colorIdx, setColorIdx]     = useState(0);
   const [brushWidth, setBrushWidth] = useState(6);
-  const [strokeCount, setStrokeCount] = useState(0);
-
-  // ── Erase points near a coordinate ──────────────────────────────────────────
-  const eraseNear = (x: number, y: number, radius: number) => {
-    let changed = false;
-    const newStrokes: Stroke[] = [];
-
-    for (const stroke of strokesRef.current) {
-      let currentSegment: Point[] = [];
-      
-      for (const p of stroke.points) {
-        const dist = Math.hypot(p.x - x, p.y - y);
-        if (dist > radius) {
-          currentSegment.push(p);
-        } else {
-          // Erase happened, split segment if needed
-          if (currentSegment.length > 1) {
-            newStrokes.push({ ...stroke, points: currentSegment });
-          }
-          currentSegment = [];
-          changed = true;
-        }
-      }
-      
-      if (currentSegment.length > 1) {
-        newStrokes.push({ ...stroke, points: currentSegment });
-      }
-    }
-
-    if (changed) {
-      strokesRef.current = newStrokes;
-      setStrokeCount(n => n + 1);
-      redrawAll();
-    }
-  };
 
   // ── Redraw all strokes on the canvas ────────────────────────────────────────
   const redrawAll = useCallback(() => {
@@ -149,6 +114,39 @@ export default function AirDrawCanvas() {
     }
   }, []);
 
+  // ── Erase points near a coordinate ──────────────────────────────────────────
+  const eraseNear = useCallback((x: number, y: number, radius: number) => {
+    let changed = false;
+    const newStrokes: Stroke[] = [];
+
+    for (const stroke of strokesRef.current) {
+      let currentSegment: Point[] = [];
+      
+      for (const p of stroke.points) {
+        const dist = Math.hypot(p.x - x, p.y - y);
+        if (dist > radius) {
+          currentSegment.push(p);
+        } else {
+          // Erase happened, split segment if needed
+          if (currentSegment.length > 1) {
+            newStrokes.push({ ...stroke, points: currentSegment });
+          }
+          currentSegment = [];
+          changed = true;
+        }
+      }
+      
+      if (currentSegment.length > 1) {
+        newStrokes.push({ ...stroke, points: currentSegment });
+      }
+    }
+
+    if (changed) {
+      strokesRef.current = newStrokes;
+      redrawAll();
+    }
+  }, [redrawAll]);
+
   // ── Handle MediaPipe results ─────────────────────────────────────────────────
   const handleResults = useCallback(
     (results: LandmarkResult) => {
@@ -162,7 +160,6 @@ export default function AirDrawCanvas() {
           strokesRef.current.push(currentStroke.current);
           currentStroke.current = null;
           isDrawingRef.current  = false;
-          setStrokeCount((n) => n + 1);
           redrawAll();
         }
         if (dot) dot.style.opacity = '0';
@@ -231,12 +228,11 @@ export default function AirDrawCanvas() {
           strokesRef.current.push(currentStroke.current);
           currentStroke.current = null;
           isDrawingRef.current  = false;
-          setStrokeCount((n) => n + 1);
           redrawAll();
         }
       }
     },
-    [redrawAll]
+    [redrawAll, eraseNear]
   );
 
 
@@ -282,14 +278,12 @@ export default function AirDrawCanvas() {
   // ── Actions ──────────────────────────────────────────────────────────────────
   const handleUndo = () => {
     strokesRef.current.pop();
-    setStrokeCount((n) => Math.max(0, n - 1));
     redrawAll();
   };
 
   const handleClear = () => {
     strokesRef.current = [];
     currentStroke.current = null;
-    setStrokeCount(0);
     redrawAll();
   };
 
@@ -639,7 +633,6 @@ export default function AirDrawCanvas() {
 
       {/* ── Keyframes via style tag ── */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
         @keyframes pulseDot {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.4; }

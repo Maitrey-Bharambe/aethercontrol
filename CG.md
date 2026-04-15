@@ -87,3 +87,56 @@ The **Aether-Core** mode demonstrates advanced interaction and model organizatio
   - The engine is built using a `THREE.Group` containing multiple `EnginePart` components.
   - **Exploded View**: We apply a translation vector to each child part relative to the group's origin. The distance is controlled by the `explodeFactor` (derived from hand distance).
   - **Interactivity**: We use a virtual **Raycaster** that originates from the user's index finger (Point gesture) to detect intersections with individual mesh components, enabling part-specific highlighting and telemetry.
+
+---
+
+## 📱 7. Page-by-Page CG Analysis
+
+### A. Hologram Page (`/hologram` & Home)
+- **Hierarchical Modeling**: The engine is built as a nested tree of 3D objects. Rotating the parent `THREE.Group` affects all children, while children can independently "explode" outwards.
+- **Trigonometric Proceduralism**: Cooling fins are placed using `sin()` and `cos()` to calculate precise circular coordinates.
+- **PBR Materials**: Use of Metalness and Roughness maps to simulate light interaction with metallic surfaces.
+
+### B. Air Draw Page (`/air-draw`)
+- **Raster Graphics**: Direct pixel manipulation via the HTML5 Canvas 2D API.
+- **Bézier Path Smoothing**: Uses `quadraticCurveTo` to interpolate between sampled hand coordinates, preventing "jagged" lines at high speeds.
+- **Composite Blending**: Employs `source-over` and `shadowBlur` to create a neon glow effect that simulates emissive light.
+
+### C. X-Ray Page (`/x-ray`)
+- **Vertex Displacement**: Treats pixel luminance as depth data to extrude the 2D camera feed into a 3D volumetric "ghost" cloud.
+- **Dynamic Color Ramps**: Uses GLSL `mix()` functions to map grayscale values to a multi-chromatic bio-thermal palette.
+- **Fragment Selection**: background points are removed in real-time using the `discard` command based on a segmentation alpha-mask.
+
+### D. Puzzle Page (`/puzzle`)
+- **Texture Atlasing**: Slices a single image into a grid of independent graphical tiles.
+- **CSS UV Mapping**: Uses `background-position` percentages to map specific image regions to rectangular primitives.
+- **Spatial Collision Detection**: Converts hand landmarks into normalized grid coordinates for piece selection and swapping.
+
+### E. Global Particle Dynamics (`CanvasParticleSystem.tsx`)
+- **Interactive Force Fields**: Implements attraction (gravity) and repulsion (electromagnetic simulation) logic based on hand gestures like GRAB and SPREAD.
+
+---
+
+## 🎓 8. Viva Quick Reference (4 Major Pillars)
+
+If asked about the **Major Concepts** of this project, refer to this mapping:
+
+### 1. X-Ray Scanner (The Shader Pillar)
+*   **Major Concept**: **3D Volumetric Extrusion via Vertex Displacement.**
+*   **The "Why"**: Traditional monitors are 2D. We use a **Vertex Shader** to calculate the luminance (brightness) of each camera pixel and push that pixel's coordinate forward in the Z-axis.
+*   **Viva Answer**: "We map the intensity of light to physical depth, transforming a flat webcam feed into a volumetric 3D point cloud in real-time."
+
+### 2. Aether-Core Hologram (The Modeling Pillar)
+*   **Major Concept**: **Hierarchical Modeling & Local Transformations.**
+*   **The "Why"**: Complex machines are built as a tree. By using a **Scene Graph (Parent-Child hierarchy)**, we can rotate the whole engine while allowing individual parts to "explode" along their own local normal vectors.
+*   **Viva Answer**: "Each part is a child of a central core. We calculate a translation vector for every segment so they can move relative to the center based on hand distance."
+
+### 3. Neon Air Draw (The Rasterization Pillar)
+*   **Major Concept**: **Digital Differential Analysis (DDA) & Bézier Smoothing.**
+*   **The "Why"**: Hand tracking is noisy. We use **Quadratic Bézier Curves** to interpolate between sampled points, ensuring the rasterized lines on the canvas look smooth and professional.
+*   **Viva Answer**: "We translate raw landmark coordinates into a 2D raster path. To prevent jagged lines, we use mathematical smoothing to bridge the gaps between tracked frames."
+
+### 4. Interactive Puzzle (The Texture Pillar)
+*   **Major Concept**: **UV Mapping & Spatial Quantization.**
+*   **The "Why"**: To slice an image, we don't cut the file; we change the **UV Coordinates** (Background Position) of each tile.
+*   **Viva Answer**: "We use a single texture atlas (the photo) and map specific sub-regions to grid tiles. We then use spatial quantization to snap hand-tracked coordinates into discrete grid slots."

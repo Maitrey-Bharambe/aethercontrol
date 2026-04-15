@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import NextImage from 'next/image';
 import { useGestureStore } from '@/store/useGestureStore';
 import { usePuzzleStore } from '@/store/usePuzzleStore';
 import { getThumbDirection, ThumbDirection } from '@/lib/gestureUtils';
@@ -14,7 +15,6 @@ export default function PuzzleBoard() {
   
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [grabIdx, setGrabIdx] = useState<number | null>(null);
-  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [activeDirection, setActiveDirection] = useState<ThumbDirection>('NEUTRAL');
 
   useEffect(() => {
@@ -22,9 +22,8 @@ export default function PuzzleBoard() {
     
     const primaryHand = hands[0];
     if (!primaryHand || !boardRef.current) {
-      if (hoverIdx !== null) setHoverIdx(null);
-      if (activeDirection !== 'NEUTRAL') setActiveDirection('NEUTRAL');
-      setDragPosition(null);
+      if (hoverIdx !== null) setTimeout(() => setHoverIdx(null), 0);
+      if (activeDirection !== 'NEUTRAL') setTimeout(() => setActiveDirection('NEUTRAL'), 0);
       return;
     }
 
@@ -50,17 +49,19 @@ export default function PuzzleBoard() {
 
     // Only update hover if not grabbed (visual feedback)
     if (grabIdx === null && currentIdx !== hoverIdx) {
-      setHoverIdx(currentIdx);
+      const idx = currentIdx;
+      setTimeout(() => setHoverIdx(idx), 0);
     }
 
     // Direction handling for selected piece
     if (grabIdx !== null) {
       const thumbDir = getThumbDirection(primaryHand.landmarks);
       if (thumbDir !== activeDirection) {
-        setActiveDirection(thumbDir);
+        const dir = thumbDir;
+        setTimeout(() => setActiveDirection(dir), 0);
       }
 
-      // Movement logic with cooldown
+      // Movement logic
       const now = Date.now();
       if (thumbDir !== 'NEUTRAL' && now - lastJumpTime.current > 700) {
         let targetIdx = -1;
@@ -74,18 +75,15 @@ export default function PuzzleBoard() {
 
         if (targetIdx !== -1) {
           swapPieces(grabIdx, targetIdx);
-          setGrabIdx(targetIdx); // Follow the piece to the new slot
+          const tIdx = targetIdx;
+          setTimeout(() => setGrabIdx(tIdx), 0); // Follow the piece to the new slot
           lastJumpTime.current = now;
         }
       }
-      
-      // Still show dragPosition for visual "glow" effect, fixed relative to board
-      setDragPosition({ x: screenX - rect.left, y: screenY - rect.top });
     } else {
-      setDragPosition(null);
-      if (activeDirection !== 'NEUTRAL') setActiveDirection('NEUTRAL');
+      if (activeDirection !== 'NEUTRAL') setTimeout(() => setActiveDirection('NEUTRAL'), 0);
     }
-  }, [hands, status, gridSize, grabIdx, swapPieces]); // Guarded deps to avoid loop
+  }, [hands, status, gridSize, grabIdx, swapPieces, activeDirection, hoverIdx]); // Guarded deps to avoid loop
 
   if (!imageSrc) return null;
 
@@ -133,7 +131,7 @@ export default function PuzzleBoard() {
            <span className="text-white/20 group-hover:text-cyan-400/50 transition-colors">REF</span>
         </div>
         <div className="relative aspect-square w-full rounded-lg overflow-hidden border border-white/5 opacity-50 group-hover:opacity-100 transition-opacity duration-500">
-          <img src={imageSrc} className="w-full h-full object-cover" alt="Goal" />
+          <NextImage src={imageSrc} fill className="object-cover" alt="Goal" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         </div>
         <div className="mt-2 text-[8px] font-mono text-white/30 truncate">

@@ -59,7 +59,7 @@ export default function HandTracker() {
         const mcp = landmarks[9];
         const rotation = Math.atan2(mcp.y - wrist.y, mcp.x - wrist.x) + Math.PI / 2;
 
-        const gesture  = detectGesture(landmarks, velocity, gestureRef.current);
+        const gesture  = detectGesture(landmarks);
         gestureRef.current = gesture;
 
         return {
@@ -74,7 +74,7 @@ export default function HandTracker() {
       });
 
 
-      setHands(handStates as any);
+      setHands(handStates as import('@/store/useGestureStore').HandState[]);
 
       // ── Draw to Mini-Preview Canvas ──
 
@@ -144,7 +144,7 @@ export default function HandTracker() {
       }
 
     },
-    [setHands, setIsTracking]
+    [setHands]
   );
 
 

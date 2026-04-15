@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGestureStore } from '@/store/useGestureStore';
@@ -13,7 +13,7 @@ interface EnginePartProps {
   children: React.ReactNode;
 }
 
-const EnginePart = ({ name, position, color, explodeDirection, children }: EnginePartProps) => {
+const EnginePart = ({ name, position, explodeDirection, children }: EnginePartProps) => {
   const meshRef = useRef<THREE.Group>(null);
   const explodeFactor = useGestureStore((s) => s.explodeFactor);
   const hoveredPartId = useGestureStore((s) => s.hoveredPartId);
@@ -21,7 +21,7 @@ const EnginePart = ({ name, position, color, explodeDirection, children }: Engin
 
   const isHovered = hoveredPartId === name;
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!meshRef.current) return;
 
     // Apply explosion offset
@@ -65,7 +65,7 @@ export default function EngineModel() {
   const handRotation = useGestureStore((s) => s.handRotation);
   const isTracking = useGestureStore((s) => s.isTracking);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!groupRef.current) return;
     
     // Auto-rotate the whole assembly (slow)

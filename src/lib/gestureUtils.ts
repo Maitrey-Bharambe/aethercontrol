@@ -88,9 +88,7 @@ export function isSpread(landmarks: Landmark[]): boolean {
 }
 
 export function detectGesture(
-  landmarks: Landmark[],
-  velocity: { x: number; y: number; z: number },
-  prevGesture: GestureType
+  landmarks: Landmark[]
 ): GestureType {
   if (!landmarks || landmarks.length < 21) return 'IDLE';
 

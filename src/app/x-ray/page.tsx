@@ -9,13 +9,19 @@ import * as THREE from 'three';
 
 const XRayCanvas = dynamic(() => import('@/components/XRay/XRayCanvas'), { ssr: false });
 
+interface Landmark {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export default function XRayPage() {
   const trackerRef = useRef<XRayTrackerHandle>(null);
   const [videoTexture, setVideoTexture] = useState<THREE.VideoTexture | null>(null);
   const [segmentationTexture, setSegmentationTexture] = useState<THREE.CanvasTexture | null>(null);
   
   // Typed landmarks state to match HUD expectations
-  const [landmarks, setLandmarks] = useState<{ left: any[] | null, right: any[] | null }>({ 
+  const [landmarks, setLandmarks] = useState<{ left: Landmark[] | null, right: Landmark[] | null }>({ 
     left: null, 
     right: null 
   });
