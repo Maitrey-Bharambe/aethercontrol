@@ -21,23 +21,23 @@ const frameFragmentShader = `
   varying vec2 vUv;
 
   void main() {
-    // Holographic Blue Tint
-    vec3 baseColor = vec3(0.0, 0.4, 0.8);
+    // Medical Cyan Tint
+    vec3 baseColor = vec3(0.0, 0.6, 0.9);
     
     // Edge Fade (Glow)
-    float edgeWidth = 0.15;
+    float edgeWidth = 0.1;
     float edgeMask = smoothstep(0.0, edgeWidth, vUv.x) * smoothstep(1.0, 1.0 - edgeWidth, vUv.x) *
                      smoothstep(0.0, edgeWidth, vUv.y) * smoothstep(1.0, 1.0 - edgeWidth, vUv.y);
                      
-    // Scanline effect
-    float scanline = sin(vUv.y * 50.0 - uTime * 4.0) * 0.1 + 0.15;
+    // Fine scanline effect
+    float scanline = sin(vUv.y * 100.0 - uTime * 2.0) * 0.05 + 0.1;
     
-    // Add pulsing glow to scanline
-    float glow = smoothstep(0.48, 0.52, fract(vUv.y * 1.5 - uTime * 0.5)) * 0.1;
+    // Medical pulse glow
+    float pulse = sin(uTime * 2.0) * 0.05 + 0.95;
     
-    float finalAlpha = (scanline + glow + 0.05) * (1.0 - edgeMask * 0.5);
+    float finalAlpha = (scanline + 0.05) * (1.0 - edgeMask * 0.8) * pulse;
     
-    gl_FragColor = vec4(baseColor * 1.5, finalAlpha * 0.6);
+    gl_FragColor = vec4(baseColor * 1.2, finalAlpha * 0.5);
   }
 `;
 

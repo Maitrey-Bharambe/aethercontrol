@@ -41,12 +41,14 @@ export default function PuzzleManager() {
         <div className="relative w-full h-full animate-in fade-in duration-1000">
            <PuzzleBoard />
            
-           {/* UI Overlay Controls */}
-           <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-8 z-[100]">
-              <div className="flex flex-col items-center gap-1">
-                 <span className="text-[10px] font-mono text-cyan-400/60 uppercase tracking-widest">Controls</span>
-                 <p className="text-white/40 text-[10px] uppercase tracking-tighter">Pinch tip of index & thumb to grab pieces</p>
-              </div>
+            {/* UI Overlay Controls */}
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-8 z-[100]">
+               <div className="flex flex-col items-center gap-1 text-center">
+                  <span className="text-[10px] font-mono text-cyan-400/60 uppercase tracking-widest">Controls</span>
+                  <p className="text-white/40 text-[10px] uppercase tracking-tighter">
+                    <span className="text-cyan-400">Click</span> to select piece • <span className="text-cyan-400">Gesture Thumb</span> Up/Down/Left/Right to move
+                  </p>
+               </div>
               
               <div className="w-[1px] h-8 bg-white/10" />
 

@@ -105,6 +105,29 @@ export function detectGesture(
 
 
 
+export type ThumbDirection = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'NEUTRAL';
+
+export function getThumbDirection(landmarks: Landmark[]): ThumbDirection {
+  if (!landmarks || landmarks.length < 5) return 'NEUTRAL';
+  
+  const base = landmarks[2]; // Thumb MCP
+  const tip = landmarks[4];  // Thumb Tip
+  
+  const dx = tip.x - base.x;
+  const dy = tip.y - base.y;
+  
+  const threshold = 0.04;
+  
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (Math.abs(dx) < threshold) return 'NEUTRAL';
+    // Mirrored X logic
+    return dx > 0 ? 'LEFT' : 'RIGHT';
+  } else {
+    if (Math.abs(dy) < threshold) return 'NEUTRAL';
+    return dy < 0 ? 'UP' : 'DOWN';
+  }
+}
+
 // Convert MediaPipe normalized coords [0,1] → world space [-1,+1]
 export function landmarkToWorld(
   lm: Landmark,

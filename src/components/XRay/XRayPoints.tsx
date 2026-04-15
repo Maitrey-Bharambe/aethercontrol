@@ -48,9 +48,9 @@ const vertexShader = `
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     
-    // Points are bigger and brighter inside the scanner
-    float sizeFactor = vInside > 0.5 ? 4.5 : 1.2;
-    gl_PointSize = vIsUser * sizeFactor * (45.0 / -mvPosition.z);
+    // High-resolution scanning: points are smaller and sharper inside scanner
+    float sizeFactor = vInside > 0.5 ? 2.5 : 1.0;
+    gl_PointSize = vIsUser * sizeFactor * (60.0 / -mvPosition.z);
     gl_Position = projectionMatrix * mvPosition;
     
     vPosition = pos;
@@ -65,19 +65,20 @@ const fragmentShader = `
   varying float vLuminance;
   varying float vIsUser;
 
-  vec3 thermalPalette(float t) {
-    vec3 cold = vec3(0.0, 0.05, 0.2);
-    vec3 cool = vec3(0.0, 0.5, 1.0);
-    vec3 mid  = vec3(0.0, 1.0, 0.5);
-    vec3 warm = vec3(1.0, 0.8, 0.0);
-    vec3 hot  = vec3(1.0, 0.2, 0.0);
-    vec3 core = vec3(1.0, 1.0, 1.0);
+  vec3 medicalXRayPalette(float t) {
+    // Medical X-ray: Deep shadows -> Cold Cyan/Blue -> Dense Bone White
+    vec3 black = vec3(0.01, 0.02, 0.05);
+    vec3 deepCyan = vec3(0.1, 0.4, 0.6);
+    vec3 boneCyan = vec3(0.6, 0.9, 1.0);
+    vec3 pureWhite = vec3(1.0, 1.0, 1.0);
     
-    if (t < 0.2) return mix(cold, cool, t * 5.0);
-    if (t < 0.4) return mix(cool, mid, (t - 0.2) * 5.0);
-    if (t < 0.6) return mix(mid, warm, (t - 0.4) * 5.0);
-    if (t < 0.8) return mix(warm, hot, (t - 0.6) * 5.0);
-    return mix(hot, core, (t - 0.8) * 5.0);
+    if (t < 0.2) return mix(black, deepCyan, t * 5.0);
+    if (t < 0.6) return mix(deepCyan, boneCyan, (t - 0.2) * 2.5);
+    return mix(boneCyan, pureWhite, (t - 0.6) * 2.5);
+  }
+
+  float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
   }
 
   void main() {
@@ -87,23 +88,31 @@ const fragmentShader = `
     if (dist > 0.5) discard;
     float strength = 1.0 - dist * 2.0;
 
-    // Default "Body Ghost" color
-    vec3 ghostColor = vec3(0.2, 0.5, 1.0) * (0.2 + 0.8 * vLuminance);
+    // Default "Body Ghost" color (Translucent Deep Blue)
+    vec3 ghostColor = vec3(0.1, 0.3, 0.8) * (0.1 + 0.9 * vLuminance);
     
-    // Thermal reconstruction
-    vec3 thermal = thermalPalette(vLuminance);
+    // Medical X-Ray Reconstruction
+    // Boost contrast for "bony" look
+    float contrastLuma = smoothstep(0.2, 0.8, vLuminance);
+    vec3 xray = medicalXRayPalette(contrastLuma);
     
-    // Topographic depth-lines (Medical Sonar look)
-    float topo = sin(vPosition.z * 20.0 - uTime * 2.0) * 0.5 + 0.5;
-    thermal *= (0.7 + 0.3 * topo);
+    // High-frequency medical noise (Grain)
+    float grain = random(vUv + uTime * 0.01) * 0.15;
+    xray += grain;
+
+    // Topographic depth-lines (Medical Imaging sonar feel)
+    float topo = sin(vPosition.z * 15.0 - uTime * 1.5) * 0.5 + 0.5;
+    xray *= (0.8 + 0.2 * topo);
 
     // Dynamic horizontal scanning bar
-    float scanLineY = fract(uTime * 0.4) * 8.0 - 4.0; 
-    float scanPulse = smoothstep(0.1, 0.0, abs(vPosition.y - scanLineY));
-    thermal += scanPulse * vec3(0.0, 1.0, 1.0) * 2.0;
+    float scanLineY = fract(uTime * 0.3) * 10.0 - 5.0; 
+    float scanPulse = smoothstep(0.15, 0.0, abs(vPosition.y - scanLineY));
+    xray += scanPulse * vec3(0.5, 1.0, 1.0) * 0.8;
 
-    vec3 finalColor = mix(ghostColor, thermal, vInside);
-    float alpha = mix(0.15, 0.9, vInside) * strength;
+    vec3 finalColor = mix(ghostColor, xray, vInside);
+    
+    // Within the scanner, make it significantly more opaque where "dense" (bright)
+    float alpha = mix(0.1, mix(0.1, 0.95, contrastLuma), vInside) * strength;
 
     gl_FragColor = vec4(finalColor, alpha);
   }

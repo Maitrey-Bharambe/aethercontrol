@@ -44,63 +44,82 @@ export default function XRaySkeleton({ landmarks }: XRaySkeletonProps) {
   }, []);
 
   useFrame((state) => {
-    const updateHand = (hand: Landmark[] | null, line: THREE.LineSegments | null) => {
-      if (!hand || !line) {
+    const updateHand = (hand: Landmark[] | null, line: THREE.LineSegments | null, points: THREE.Points | null) => {
+      if (!hand || !line || !points) {
         if (line) line.visible = false;
+        if (points) points.visible = false;
         return;
       }
       
       line.visible = true;
-      const positions = line.geometry.attributes.position.array as Float32Array;
+      points.visible = true;
+      const linePos = line.geometry.attributes.position.array as Float32Array;
+      const pointPos = points.geometry.attributes.position.array as Float32Array;
       
       hand.forEach((lm, idx) => {
-        const world = landmarkToWorld(lm, scaleX, scaleY, 3.0); // Slightly in front of body (z=3)
-        positions[idx * 3 + 0] = world.x;
-        positions[idx * 3 + 1] = world.y;
-        positions[idx * 3 + 2] = world.z + 0.1; // Offset for visibility
+        const world = landmarkToWorld(lm, scaleX, scaleY, 3.2); // Further forward
+        
+        linePos[idx * 3 + 0] = world.x;
+        linePos[idx * 3 + 1] = world.y;
+        linePos[idx * 3 + 2] = world.z;
+
+        pointPos[idx * 3 + 0] = world.x;
+        pointPos[idx * 3 + 1] = world.y;
+        pointPos[idx * 3 + 2] = world.z;
       });
       
       line.geometry.attributes.position.needsUpdate = true;
+      points.geometry.attributes.position.needsUpdate = true;
       
-      // Pulse effect
+      // Pulse effect: faster and more surgical
+      const pulse = 0.6 + Math.sin(state.clock.elapsedTime * 6.0) * 0.4;
       if (line.material instanceof THREE.LineBasicMaterial) {
-        line.material.opacity = 0.4 + Math.sin(state.clock.elapsedTime * 8) * 0.2;
+        line.material.opacity = 0.3 * pulse;
+      }
+      if (points.material instanceof THREE.PointsMaterial) {
+        points.material.opacity = 0.8 * pulse;
+        points.material.size = 0.15 * pulse;
       }
     };
 
-    updateHand(landmarks.left, lineRefLeft.current);
-    updateHand(landmarks.right, lineRefRight.current);
+    updateHand(landmarks.left, lineRefLeft.current, pointsRefLeft.current);
+    updateHand(landmarks.right, lineRefRight.current, pointsRefRight.current);
   });
+
+  const pointsRefLeft = useRef<THREE.Points>(null);
+  const pointsRefRight = useRef<THREE.Points>(null);
 
   return (
     <group>
+      {/* Left Hand */}
       <lineSegments ref={lineRefLeft}>
         <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[vertices, 3]}
-          />
-          <bufferAttribute
-            attach="attributes-index"
-            args={[indices, 1]}
-          />
+          <bufferAttribute attach="attributes-position" args={[vertices, 3]} />
+          <bufferAttribute attach="attributes-index" args={[indices, 1]} />
         </bufferGeometry>
-        <lineBasicMaterial color="#00ffff" transparent linewidth={2} />
+        <lineBasicMaterial color="#ffffff" transparent linewidth={1} opacity={0.5} />
       </lineSegments>
+      <points ref={pointsRefLeft}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[vertices, 3]} />
+        </bufferGeometry>
+        <pointsMaterial color="#00ffff" size={0.12} transparent opacity={0.8} />
+      </points>
 
+      {/* Right Hand */}
       <lineSegments ref={lineRefRight}>
         <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[vertices, 3]}
-          />
-          <bufferAttribute
-            attach="attributes-index"
-            args={[indices, 1]}
-          />
+          <bufferAttribute attach="attributes-position" args={[vertices, 3]} />
+          <bufferAttribute attach="attributes-index" args={[indices, 1]} />
         </bufferGeometry>
-        <lineBasicMaterial color="#00ffff" transparent linewidth={2} />
+        <lineBasicMaterial color="#ffffff" transparent linewidth={1} opacity={0.5} />
       </lineSegments>
+      <points ref={pointsRefRight}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[vertices, 3]} />
+        </bufferGeometry>
+        <pointsMaterial color="#00ffff" size={0.12} transparent opacity={0.8} />
+      </points>
     </group>
   );
 }
